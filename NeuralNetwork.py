@@ -1,6 +1,5 @@
 from scipy.special import expit as sigmoid
 import numpy as np
-np.random.seed(10)
 
 
 class NeuralNetwork:
@@ -46,17 +45,29 @@ class NeuralNetwork:
     def predict(self, x):
         results = []
         for a in x:
+            # print(a.shape)
+            # print(self.weights[0].shape)
+            # exit()
+            a = a[None, ...]
+            # print(a.shape)
             output = self.activation_function(np.dot(a, self.weights[0]))
 
             for layer in self.weights[1:]:
                 output = self.activation_function(np.dot(output, layer))
 
+            # print(output)
+            # print(output.shape)
+            # exit()
             if output[0] > 0.5:
-                results.append(1)
+                results.append(1.)
             else:
-                results.append(0)
+                results.append(0.)
 
-        return results
+        # return np.array(results, dtype=np.int)
+        return np.array(results)
+
+    def predict_(self, x):
+        return np.array((self.feed_forward(x)[-1] > 0.5) * 1)
 
     def feed_forward(self, x):
         output = self.activation_function(np.dot(x, self.weights[0]))
@@ -99,11 +110,24 @@ def generate_data(target):
 
 
 if __name__ == '__main__':
-    target = np.array(np.random.choice([0, 1], size=(1000, 1), p=[2. / 3, 1. / 3]))
+    target = np.array(np.random.choice([0, 1], size=(1000, 1), p=[1. / 2, 1. / 2]))
     features = np.array(generate_data(target))
 
-    nn = NeuralNetwork([2, 150, 150, 1], learning_rate=0.1, max_iterations=1000)
-    nn.train(features, target, False)
-    preds = nn.predict(features)
+    for i in range(1):
+        nn = NeuralNetwork([2, 100, 100, 1], learning_rate=0.3, max_iterations=50)
+        nn.train(features, target, False)
+        preds_mask = nn.predict_(features)
+        preds_list = nn.predict(features)
 
-    print((preds == target).mean() * 100)
+        preds_list = preds_list.reshape(target.shape)
+        preds_mask = preds_mask.reshape(target.shape)
+
+        print(preds_list.shape)
+        print(preds_mask.shape)
+
+        print('Mascara:', (preds_mask == target).mean() * 100)
+        print('Lista:', (preds_list == target).mean() * 100)
+
+        print()
+        print('=' * 150)
+        print()
