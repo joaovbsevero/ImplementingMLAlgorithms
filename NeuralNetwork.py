@@ -3,11 +3,12 @@ import numpy as np
 
 
 class NeuralNetwork:
-    def __init__(self, neurons_by_layer, learning_rate=0.01, max_iterations=1000):
+    def __init__(self, neurons_by_layer, learning_rate=0.01, max_iterations=1000, batch_size=100):
         self.weights = self.initialize_weights(neurons_by_layer)
         self.learning_rate = learning_rate
         self.max_iterations = max_iterations
         self.activation_function = sigmoid
+        self.batch_size = batch_size
 
     def initialize_weights(self, neurons_by_layer):
         self.weights = []
@@ -22,7 +23,7 @@ class NeuralNetwork:
 
         if use_batch:
             for i in range(self.max_iterations):
-                for batch_f, batch_t in zip(np.array_split(x, 30), np.array_split(y, 30)):
+                for batch_f, batch_t in zip(np.array_split(x, self.batch_size), np.array_split(y, self.batch_size)):
                     batch_deltas = None
                     for f, t in zip(batch_f, batch_t):
                         outputs = self.feed_forward(f)
@@ -43,30 +44,6 @@ class NeuralNetwork:
                     self.update_weights(deltas, length)
 
     def predict(self, x):
-        results = []
-        for a in x:
-            # print(a.shape)
-            # print(self.weights[0].shape)
-            # exit()
-            a = a[None, ...]
-            # print(a.shape)
-            output = self.activation_function(np.dot(a, self.weights[0]))
-
-            for layer in self.weights[1:]:
-                output = self.activation_function(np.dot(output, layer))
-
-            # print(output)
-            # print(output.shape)
-            # exit()
-            if output[0] > 0.5:
-                results.append(1.)
-            else:
-                results.append(0.)
-
-        # return np.array(results, dtype=np.int)
-        return np.array(results)
-
-    def predict_(self, x):
         return np.array((self.feed_forward(x)[-1] > 0.5) * 1)
 
     def feed_forward(self, x):
@@ -116,17 +93,13 @@ if __name__ == '__main__':
     for i in range(1):
         nn = NeuralNetwork([2, 100, 100, 1], learning_rate=0.3, max_iterations=50)
         nn.train(features, target, False)
-        preds_mask = nn.predict_(features)
         preds_list = nn.predict(features)
 
         preds_list = preds_list.reshape(target.shape)
-        preds_mask = preds_mask.reshape(target.shape)
 
         print(preds_list.shape)
-        print(preds_mask.shape)
 
-        print('Mascara:', (preds_mask == target).mean() * 100)
-        print('Lista:', (preds_list == target).mean() * 100)
+        print((preds_list == target).mean() * 100)
 
         print()
         print('=' * 150)
